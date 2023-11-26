@@ -1,0 +1,47 @@
+from imutils import face_utils
+import dlib
+import cv2
+from imutils.video import VideoStream
+import imutils
+import time
+
+# load the pic
+overlay_image = cv2.imread("zombie1.png")
+if overlay_image is None:
+    raise Exception("Failed to load overlay image.")
+
+detector = dlib.get_frontal_face_detector()
+
+print("-> Starting Face Detection")
+c = VideoStream(src=0).start()  # For webcam, comment it if using Raspberry Pi Camera module
+# c = VideoStream(usePiCamera=True).start()  # For Raspberry Pi Camera module, comment it if using webcam
+time.sleep(2.0)
+
+while True:
+    frame = c.read()
+    if frame is None:
+        print("Failed to capture frame.")
+        break
+
+    frame = imutils.resize(frame, width=450)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    rects = detector(gray, 0)
+
+    for rect in rects:
+        x1, y1, x2, y2 = rect.left(), rect.top(), rect.right(), rect.bottom()
+
+        # resize overlay image to match the size of each detected face rectangle
+        overlay_resized = cv2.resize(overlay_image, (x2 - x1, y2 - y1))
+
+        # cover each face with the resized image
+        frame[y1:y2, x1:x2] = overlay_resized
+
+    cv2.imshow("Frame", frame)
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("q"):
+        break
+
+cv2.destroyAllWindows()
+c.stop()
